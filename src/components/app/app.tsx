@@ -1,5 +1,14 @@
-import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import {
+  Routes,
+  Route,
+  useLocation,
+  useNavigate,
+  useMatch
+} from 'react-router-dom';
+import { useEffect } from 'react';
+import { useDispatch } from '../../services/store';
+import { checkUserAuth } from '../../services/slices/user-slice';
+import { fetchIngredients } from '../../services/slices/ingredients-slice';
 import {
   ConstructorPage,
   Feed,
@@ -19,7 +28,23 @@ import styles from './app.module.css';
 const App = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const profileMatch = useMatch('/profile/orders/:number')?.params.number;
+  const feedMatch = useMatch('/feed/:number')?.params.number;
+  const orderNumber = profileMatch || feedMatch;
+
   const backgroundLocation = location.state?.backgroundLocation;
+
+  //проверка авторизации
+  useEffect(() => {
+    dispatch(checkUserAuth());
+  }, [dispatch]);
+
+  //загрузка ингридиентов
+  useEffect(() => {
+    dispatch(fetchIngredients());
+  }, [dispatch]);
 
   const handleModalClose = () => {
     navigate(-1);
@@ -89,24 +114,39 @@ const App = () => {
         <Route
           path='/feed/:number'
           element={
-            <div className={styles.pageWrapper}>
+            <div className={styles.detailPageWrap}>
+              <p
+                className={`text text_type_digits-default ${styles.detailHeader}`}
+              >
+                #{orderNumber && orderNumber.padStart(6, '0')}
+              </p>
               <OrderInfo />
             </div>
           }
         />
+
         <Route
           path='/ingredients/:id'
           element={
-            <div className={styles.pageWrapper}>
+            <div className={styles.detailPageWrap}>
+              <p className={`text text_type_main-large ${styles.detailHeader}`}>
+                Детали ингредиента
+              </p>
               <IngredientDetails />
             </div>
           }
         />
+
         <Route
           path='/profile/orders/:number'
           element={
             <ProtectedRoute>
-              <div className={styles.pageWrapper}>
+              <div className={styles.detailPageWrap}>
+                <p
+                  className={`text text_type_digits-default ${styles.detailHeader}`}
+                >
+                  #{orderNumber && orderNumber.padStart(6, '0')}
+                </p>
                 <OrderInfo />
               </div>
             </ProtectedRoute>

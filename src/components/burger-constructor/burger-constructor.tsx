@@ -1,15 +1,24 @@
-import { FC, useMemo } from 'react';
+import { FC, useMemo, useEffect } from 'react';
 import { useDispatch, useSelector } from '../../services/store';
 import { TConstructorIngredient } from '@utils-types';
 import { BurgerConstructorUI } from '@ui';
 import { useNavigate } from 'react-router-dom';
 import {
-  constructorItemsSelector, // Используем безопасный селектор
+  constructorItemsSelector,
   orderRequestSelector,
   currentOrderSelector
 } from '../../services/selectors';
-import { createOrder } from '../../services/slices/orders-slice';
+import {
+  createOrder,
+  clearCurrentOrder
+} from '../../services/slices/orders-slice';
 import { clearConstructor } from '../../services/slices/constructor-slice';
+import { getCookie } from '../../utils/cookie';
+import {
+  fetchUserOrders,
+  addUserOrder
+} from '../../services/slices/user-slice';
+import { fetchFeedOrders } from '../../services/slices/feed-slice';
 
 export const BurgerConstructor: FC = () => {
   const dispatch = useDispatch();
@@ -18,12 +27,6 @@ export const BurgerConstructor: FC = () => {
   const constructorItems = useSelector(constructorItemsSelector);
   const orderRequest = useSelector(orderRequestSelector);
   const orderModalData = useSelector(currentOrderSelector);
-
-  console.log('constructorItems debug:', constructorItems);
-  /*const onOrderClick = () => {
-    if (!constructorItems.bun || orderRequest) return;
-  };
-  const closeOrderModal = () => {};*/
 
   const price = useMemo(
     () =>
@@ -34,15 +37,24 @@ export const BurgerConstructor: FC = () => {
       ),
     [constructorItems]
   );
+  // Добавляем заказ в историю пользователя после успешного создания
+  useEffect(() => {
+    if (orderModalData) {
+      // Добавляем заказ в историю пользователя
+      dispatch(addUserOrder(orderModalData));
+
+      // Обновляем ленту заказов
+      dispatch(fetchFeedOrders());
+
+      // Если пользователь авторизован, обновляем его историю с сервера
+      const token = getCookie('accessToken');
+      if (token) {
+        dispatch(fetchUserOrders());
+      }
+    }
+  }, [orderModalData, dispatch]);
 
   const onOrderClick = () => {
-    console.log('=== ORDER CLICK DEBUG ===');
-    console.log('Bun:', constructorItems.bun);
-    console.log('Ingredients:', constructorItems.ingredients);
-    console.log('Ingredients count:', constructorItems.ingredients.length);
-    console.log('Order request:', orderRequest);
-    console.log('Has token:', !!localStorage.getItem('accessToken'));
-    console.log('=== END DEBUG ===');
     // Проверяем наличие булки и ингредиентов
     if (
       !constructorItems.bun ||
@@ -52,10 +64,11 @@ export const BurgerConstructor: FC = () => {
       return;
     }
 
-    // Проверяем авторизацию
-    const token = localStorage.getItem('accessToken');
+    // Проверяем авторизацию через куки
+    const token = getCookie('accessToken');
+
     if (!token) {
-      navigate('/login');
+      navigate('/login', { state: { from: { pathname: '/' } } });
       return;
     }
 
@@ -71,7 +84,8 @@ export const BurgerConstructor: FC = () => {
   };
 
   const closeOrderModal = () => {
-    // Закрываем модалку и очищаем конструктор
+    // Закрываем модалку и очищаем состояние заказа
+    dispatch(clearCurrentOrder());
     dispatch(clearConstructor());
   };
 

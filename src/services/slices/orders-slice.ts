@@ -53,7 +53,7 @@ export const fetchFeedOrders = createAsyncThunk(
   async (_, { rejectWithValue }) => {
     try {
       const response = await getFeedsApi();
-      return response; // { orders: TOrder[], total: number, totalToday: number }
+      return response;
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -66,6 +66,9 @@ const ordersSlice = createSlice({
   reducers: {
     clearCurrentOrder: (state) => {
       state.currentOrder = null;
+      state.orderRequest = false;
+      state.orderFailed = false;
+      state.error = null;
     },
     clearOrderError: (state) => {
       state.error = null;
@@ -82,11 +85,13 @@ const ordersSlice = createSlice({
       .addCase(createOrder.fulfilled, (state, action) => {
         state.orderRequest = false;
         state.currentOrder = action.payload;
+        state.orderFailed = false;
       })
       .addCase(createOrder.rejected, (state, action) => {
         state.orderRequest = false;
         state.orderFailed = true;
         state.error = (action.payload as string) || 'Ошибка создания заказа';
+        state.currentOrder = null;
       })
       // fetchUserOrders
       .addCase(fetchUserOrders.pending, (state) => {

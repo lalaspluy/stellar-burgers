@@ -1,6 +1,8 @@
 import { useSelector } from 'react-redux';
 import { Navigate, useLocation } from 'react-router-dom';
 import { Preloader } from '../ui/preloader';
+import { getCookie } from '../../utils/cookie';
+import { isAuthCheckedSelector, userSelector } from '../../services/selectors';
 
 type ProtectedRouteProps = {
   onlyUnAuth?: boolean;
@@ -11,17 +13,18 @@ export const ProtectedRoute = ({
   onlyUnAuth = false,
   children
 }: ProtectedRouteProps) => {
-  /*const user = useSelector((state) => state.user.user);
-  const isAuthChecked = useSelector((state) => state.user.isAuthChecked);*/
   const location = useLocation();
 
-  const token = localStorage.getItem('accessToken');
-  const isAuthenticated = !!token;
+  const isAuthChecked = useSelector(isAuthCheckedSelector);
+  const user = useSelector(userSelector);
 
-  // Пока не проверили авторизацию, показываем прелоадер
-  /*if (!isAuthChecked && !onlyUnAuth) {
+  const token = getCookie('accessToken');
+  const isAuthenticated = !!token && !!user;
+
+  // Если проверка авторизации еще не завершена, показываем прелоадер
+  if (!isAuthChecked && !onlyUnAuth) {
     return <Preloader />;
-  }*/
+  }
 
   // Маршрут для авторизованных, но пользователь не авторизован
   if (!onlyUnAuth && !isAuthenticated) {
