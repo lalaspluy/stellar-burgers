@@ -70,12 +70,6 @@ export const Profile: FC = () => {
     return <Preloader />;
   }
 
-  console.log('Profile debug:', {
-    user,
-    formValue,
-    isFormChanged
-  });
-
   return (
     <ProfileUI
       formValue={formValue}
