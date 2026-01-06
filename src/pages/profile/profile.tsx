@@ -36,7 +36,6 @@ export const Profile: FC = () => {
       dispatch(updateUser(updateData))
         .unwrap()
         .then(() => {
-          // Очищаем поле пароля после успешного обновления
           setFormValue((prev) => ({
             ...prev,
             password: ''
