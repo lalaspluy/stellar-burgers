@@ -1,4 +1,4 @@
-import { FC, useMemo, useEffect } from 'react';
+import { FC, useMemo } from 'react';
 import { useDispatch, useSelector } from '../../services/store';
 import { TConstructorIngredient } from '@utils-types';
 import { BurgerConstructorUI } from '@ui';
@@ -14,11 +14,6 @@ import {
 } from '../../services/slices/orders-slice';
 import { clearConstructor } from '../../services/slices/constructor-slice';
 import { getCookie } from '../../utils/cookie';
-import {
-  fetchUserOrders,
-  addUserOrder
-} from '../../services/slices/user-slice';
-import { fetchFeedOrders } from '../../services/slices/feed-slice';
 
 export const BurgerConstructor: FC = () => {
   const dispatch = useDispatch();
@@ -37,25 +32,8 @@ export const BurgerConstructor: FC = () => {
       ),
     [constructorItems]
   );
-  // Добавляем заказ в историю пользователя после успешного создания
-  useEffect(() => {
-    if (orderModalData) {
-      // Добавляем заказ в историю пользователя
-      dispatch(addUserOrder(orderModalData));
-
-      // Обновляем ленту заказов
-      dispatch(fetchFeedOrders());
-
-      // Если пользователь авторизован, обновляем его историю с сервера
-      const token = getCookie('accessToken');
-      if (token) {
-        dispatch(fetchUserOrders());
-      }
-    }
-  }, [orderModalData, dispatch]);
 
   const onOrderClick = () => {
-    // Проверяем наличие булки и ингредиентов
     if (
       !constructorItems.bun ||
       constructorItems.ingredients.length === 0 ||
@@ -64,7 +42,6 @@ export const BurgerConstructor: FC = () => {
       return;
     }
 
-    // Проверяем авторизацию через куки
     const token = getCookie('accessToken');
 
     if (!token) {
@@ -72,19 +49,16 @@ export const BurgerConstructor: FC = () => {
       return;
     }
 
-    // Формируем массив ID ингредиентов для заказа
     const ingredientIds: string[] = [
-      constructorItems.bun._id, // Булка в начале
+      constructorItems.bun._id,
       ...constructorItems.ingredients.map((ing) => ing._id),
-      constructorItems.bun._id // Булка в конце
+      constructorItems.bun._id
     ];
 
-    // Отправляем запрос на создание заказа
     dispatch(createOrder(ingredientIds));
   };
 
   const closeOrderModal = () => {
-    // Закрываем модалку и очищаем состояние заказа
     dispatch(clearCurrentOrder());
     dispatch(clearConstructor());
   };

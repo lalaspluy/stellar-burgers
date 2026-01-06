@@ -10,7 +10,6 @@ import {
 } from '../../services/selectors';
 
 export const BurgerIngredients: FC = () => {
-  /** TODO: взять переменные из стора */
   const buns = useSelector(bunsSelector);
   const mains = useSelector(mainsSelector);
   const sauces = useSelector(saucesSelector);

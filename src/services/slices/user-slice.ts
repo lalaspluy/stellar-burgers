@@ -1,4 +1,4 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import {
   registerUserApi,
   loginUserApi,
@@ -16,9 +16,6 @@ type TUserState = {
   loading: boolean;
   error: string | null;
   orders: TOrder[];
-  ordersLoading: boolean;
-  ordersError: string | null;
-  lastOrdersUpdate: number | null;
 };
 
 const initialState: TUserState = {
@@ -26,10 +23,7 @@ const initialState: TUserState = {
   isAuthChecked: false,
   loading: false,
   error: null,
-  orders: [],
-  ordersLoading: false,
-  ordersError: null,
-  lastOrdersUpdate: null
+  orders: []
 };
 
 export const checkUserAuth = createAsyncThunk(
@@ -106,20 +100,10 @@ export const updateUser = createAsyncThunk(
 
 export const fetchUserOrders = createAsyncThunk(
   'user/fetchOrders',
-  async (_, { rejectWithValue, getState }) => {
+  async (_, { rejectWithValue }) => {
     try {
-      const state = getState() as { user: TUserState };
-      const lastUpdate = state.user.lastOrdersUpdate;
-      const now = Date.now();
-
-      if (lastUpdate && now - lastUpdate < 10000) {
-        const { orders } = state.user;
-        return { orders, timestamp: now };
-      }
-
       const orders = await getOrdersApi();
-
-      return { orders, timestamp: now };
+      return orders;
     } catch (error) {
       return rejectWithValue((error as Error).message);
     }
@@ -130,28 +114,12 @@ const userSlice = createSlice({
   name: 'user',
   initialState,
   reducers: {
-    setAuthChecked: (state, action: PayloadAction<boolean>) => {
-      state.isAuthChecked = action.payload;
-    },
-    setUser: (state, action: PayloadAction<TUser | null>) => {
-      state.user = action.payload;
-    },
     clearError: (state) => {
       state.error = null;
-      state.ordersError = null;
-    },
-    clearUserOrders: (state) => {
-      state.orders = [];
-      state.lastOrdersUpdate = null;
-    },
-    addUserOrder: (state, action: PayloadAction<TOrder>) => {
-      // Добавляем заказ в начало массива (новые заказы сверху)
-      state.orders.unshift(action.payload);
     }
   },
   extraReducers: (builder) => {
     builder
-      // checkUserAuth
       .addCase(checkUserAuth.pending, (state) => {
         state.loading = true;
       })
@@ -165,7 +133,6 @@ const userSlice = createSlice({
         state.user = null;
         state.isAuthChecked = true;
       })
-      // registerUser
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -179,7 +146,6 @@ const userSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      // loginUser
       .addCase(loginUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -193,7 +159,6 @@ const userSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      // logoutUser
       .addCase(logoutUser.pending, (state) => {
         state.loading = true;
       })
@@ -201,13 +166,11 @@ const userSlice = createSlice({
         state.loading = false;
         state.user = null;
         state.orders = [];
-        state.lastOrdersUpdate = null;
       })
       .addCase(logoutUser.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       })
-      // updateUser
       .addCase(updateUser.pending, (state) => {
         state.loading = true;
         state.error = null;
@@ -220,28 +183,17 @@ const userSlice = createSlice({
         state.loading = false;
         state.error = action.payload as string;
       })
-      // fetchUserOrders
       .addCase(fetchUserOrders.pending, (state) => {
-        state.ordersLoading = true;
-        state.ordersError = null;
+        state.error = null;
       })
       .addCase(fetchUserOrders.fulfilled, (state, action) => {
-        state.ordersLoading = false;
-        state.orders = action.payload.orders;
-        state.lastOrdersUpdate = action.payload.timestamp;
+        state.orders = action.payload;
       })
       .addCase(fetchUserOrders.rejected, (state, action) => {
-        state.ordersLoading = false;
-        state.ordersError = action.payload as string;
+        state.error = action.payload as string;
       });
   }
 });
 
-export const {
-  setAuthChecked,
-  setUser,
-  clearError,
-  clearUserOrders,
-  addUserOrder
-} = userSlice.actions;
+export const { clearError } = userSlice.actions;
 export default userSlice.reducer;

@@ -1,10 +1,4 @@
-import {
-  Routes,
-  Route,
-  useLocation,
-  useNavigate,
-  useMatch
-} from 'react-router-dom';
+import { Routes, Route, useLocation, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useDispatch } from '../../services/store';
 import { checkUserAuth } from '../../services/slices/user-slice';
@@ -30,18 +24,12 @@ const App = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const profileMatch = useMatch('/profile/orders/:number')?.params.number;
-  const feedMatch = useMatch('/feed/:number')?.params.number;
-  const orderNumber = profileMatch || feedMatch;
+  const backgroundLocation = location.state?.background;
 
-  const backgroundLocation = location.state?.backgroundLocation;
-
-  //проверка авторизации
   useEffect(() => {
     dispatch(checkUserAuth());
   }, [dispatch]);
 
-  //загрузка ингридиентов
   useEffect(() => {
     dispatch(fetchIngredients());
   }, [dispatch]);
@@ -54,11 +42,9 @@ const App = () => {
     <div className={styles.app}>
       <AppHeader />
       <Routes location={backgroundLocation || location}>
-        {/* Основные роуты */}
         <Route path='/' element={<ConstructorPage />} />
         <Route path='/feed' element={<Feed />} />
 
-        {/* Защищённые роуты ТОЛЬКО для неавторизованных */}
         <Route
           path='/login'
           element={
@@ -92,7 +78,6 @@ const App = () => {
           }
         />
 
-        {/* Защищённые роуты ТОЛЬКО для авторизованных */}
         <Route
           path='/profile'
           element={
@@ -110,21 +95,6 @@ const App = () => {
           }
         />
 
-        {/* Страницы для прямого доступа (без модалок) */}
-        <Route
-          path='/feed/:number'
-          element={
-            <div className={styles.detailPageWrap}>
-              <p
-                className={`text text_type_digits-default ${styles.detailHeader}`}
-              >
-                #{orderNumber && orderNumber.padStart(6, '0')}
-              </p>
-              <OrderInfo />
-            </div>
-          }
-        />
-
         <Route
           path='/ingredients/:id'
           element={
@@ -138,36 +108,30 @@ const App = () => {
         />
 
         <Route
+          path='/feed/:number'
+          element={
+            <div className={styles.detailPageWrap}>
+              <OrderInfo />
+            </div>
+          }
+        />
+
+        <Route
           path='/profile/orders/:number'
           element={
             <ProtectedRoute>
               <div className={styles.detailPageWrap}>
-                <p
-                  className={`text text_type_digits-default ${styles.detailHeader}`}
-                >
-                  #{orderNumber && orderNumber.padStart(6, '0')}
-                </p>
                 <OrderInfo />
               </div>
             </ProtectedRoute>
           }
         />
 
-        {/* Роут для 404 */}
         <Route path='*' element={<NotFound404 />} />
       </Routes>
 
-      {/* Модальные окна (только при наличии backgroundLocation) */}
       {backgroundLocation && (
         <Routes>
-          <Route
-            path='/feed/:number'
-            element={
-              <Modal title='Детали заказа' onClose={handleModalClose}>
-                <OrderInfo />
-              </Modal>
-            }
-          />
           <Route
             path='/ingredients/:id'
             element={
@@ -177,13 +141,19 @@ const App = () => {
             }
           />
           <Route
+            path='/feed/:number'
+            element={
+              <Modal title='' onClose={handleModalClose}>
+                <OrderInfo />
+              </Modal>
+            }
+          />
+          <Route
             path='/profile/orders/:number'
             element={
-              <ProtectedRoute>
-                <Modal title='Детали заказа' onClose={handleModalClose}>
-                  <OrderInfo />
-                </Modal>
-              </ProtectedRoute>
+              <Modal title='' onClose={handleModalClose}>
+                <OrderInfo />
+              </Modal>
             }
           />
         </Routes>
