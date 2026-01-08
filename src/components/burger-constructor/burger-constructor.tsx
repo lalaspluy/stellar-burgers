@@ -12,7 +12,6 @@ import {
   createOrder,
   clearCurrentOrder
 } from '../../services/slices/orders-slice';
-import { clearConstructor } from '../../services/slices/constructor-slice';
 import { getCookie } from '../../utils/cookie';
 
 export const BurgerConstructor: FC = () => {
@@ -34,11 +33,7 @@ export const BurgerConstructor: FC = () => {
   );
 
   const onOrderClick = () => {
-    if (
-      !constructorItems.bun ||
-      constructorItems.ingredients.length === 0 ||
-      orderRequest
-    ) {
+    if (!constructorItems.bun || orderRequest) {
       return;
     }
 
@@ -60,7 +55,6 @@ export const BurgerConstructor: FC = () => {
 
   const closeOrderModal = () => {
     dispatch(clearCurrentOrder());
-    dispatch(clearConstructor());
   };
 
   return (
