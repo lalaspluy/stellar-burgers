@@ -1,23 +1,56 @@
-import { FC, useMemo } from 'react';
+import { FC, useMemo, useEffect } from 'react';
 import { Preloader } from '../ui/preloader';
 import { OrderInfoUI } from '../ui/order-info';
 import { TIngredient } from '@utils-types';
+import { useParams, useLocation } from 'react-router-dom';
+import { useDispatch, useSelector } from '../../services/store';
+import {
+  ingredientsSelector,
+  feedOrdersSelector,
+  userOrdersSelector
+} from '../../services/selectors';
+import { fetchFeedOrders } from '../../services/slices/feed-slice';
+import { fetchUserOrders } from '../../services/slices/user-slice';
 
 export const OrderInfo: FC = () => {
-  /** TODO: взять переменные orderData и ingredients из стора */
-  const orderData = {
-    createdAt: '',
-    ingredients: [],
-    _id: '',
-    status: '',
-    name: '',
-    updatedAt: 'string',
-    number: 0
-  };
+  const { number } = useParams<{ number: string }>();
+  const location = useLocation();
+  const dispatch = useDispatch();
 
-  const ingredients: TIngredient[] = [];
+  const ingredients: TIngredient[] = useSelector(ingredientsSelector);
+  const feedOrders = useSelector(feedOrdersSelector);
+  const userOrders = useSelector(userOrdersSelector);
 
-  /* Готовим данные для отображения */
+  useEffect(() => {
+    if (location.pathname.includes('/feed/')) {
+      // Если на странице ленты и заказы не загружены
+      if (feedOrders.length === 0) {
+        dispatch(fetchFeedOrders());
+      }
+    } else if (location.pathname.includes('/profile/orders/')) {
+      // Если на странице истории заказов и заказы не загружены
+      if (userOrders.length === 0) {
+        dispatch(fetchUserOrders());
+      }
+    }
+  }, [location.pathname, dispatch, feedOrders.length, userOrders.length]);
+
+  const orderData = useMemo(() => {
+    if (!number) return null;
+
+    const orderNumber = Number(number);
+
+    if (location.pathname.includes('/feed/')) {
+      return feedOrders.find((order) => order.number === orderNumber);
+    }
+
+    if (location.pathname.includes('/profile/orders/')) {
+      return userOrders.find((order) => order.number === orderNumber);
+    }
+
+    return null;
+  }, [number, location.pathname, feedOrders, userOrders]);
+
   const orderInfo = useMemo(() => {
     if (!orderData || !ingredients.length) return null;
 
